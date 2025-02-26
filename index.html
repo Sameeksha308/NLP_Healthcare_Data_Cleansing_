@@ -1,0 +1,135 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Healthcare Data Cleansing Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+            margin: 20px;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            max-width: 900px;
+            margin: auto;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+        .table-container {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Healthcare Data Cleansing Dashboard</h2>
+
+    <div class="container">
+        <div class="card">
+            <h3>Overall Data Quality Metric</h3>
+            <h1 id="quality-metric">Loading...</h1>
+            <p>This score indicates the overall quality of current healthcare data.</p>
+        </div>
+        <div class="card">
+            <h3>Test Result Predict Analysis</h3>
+            <canvas id="testResultsChart"></canvas>
+        </div>
+    </div>
+
+    <div class="card" style="margin-top: 20px;">
+        <h3>Live Healthcare Data</h3>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Age</th>
+                        <th>Gender</th>
+                        <th>Blood Type</th>
+                        <th>Test Result</th>
+                    </tr>
+                </thead>
+                <tbody id="data-table">
+                    <tr><td colspan="5">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        async function fetchHealthcareData() {
+            try {
+                const response = await axios.get("http://localhost:3000/data");
+                const data = response.data;
+
+                // Update Data Quality Metric
+                document.getElementById("quality-metric").innerText = data.qualityMetric;
+
+                // Count test results for Pie Chart
+                let normalCount = data.testResults.filter(r => r.result === "Normal").length;
+                let abnormalCount = data.testResults.filter(r => r.result === "Abnormal").length;
+                let inconclusiveCount = data.testResults.filter(r => r.result === "Inconclusive").length;
+
+                // Display Pie Chart
+                new Chart(document.getElementById("testResultsChart"), {
+                    type: "pie",
+                    data: {
+                        labels: ["Normal", "Abnormal", "Inconclusive"],
+                        datasets: [{
+                            data: [normalCount, abnormalCount, inconclusiveCount],
+                            backgroundColor: ["green", "red", "yellow"]
+                        }]
+                    }
+                });
+
+                // Display all data in table
+                const tableBody = document.getElementById("data-table");
+                tableBody.innerHTML = data.testResults.map(r => `
+                    <tr>
+                        <td>${r.name}</td>
+                        <td>${r.age}</td>
+                        <td>${r.gender}</td>
+                        <td>${r.bloodType}</td>
+                        <td>${r.result}</td>
+                    </tr>
+                `).join("");
+                
+            } catch (error) {
+                console.error("Error fetching data", error);
+            }
+        }
+
+        fetchHealthcareData();
+        setInterval(fetchHealthcareData, 5000);
+    </script>
+
+</body>
+</html>
